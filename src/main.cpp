@@ -1,9 +1,9 @@
-#include <cstdlib> //std::getenv
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <string>
-#include <unistd.h> //access(), X_OK
-#include<vector>
+#include <unistd.h>
+#include <vector>
 
 std::vector<std::string> split(const std::string &str, char delimeter) {
   std::vector<std::string> parts;
@@ -32,22 +32,48 @@ std::string find_executables_in_path(const std::string &cmd_name) {
   std::string path_env(path_cstr);
   char path_delimeter = ':';
   auto dirs = split(path_env, path_delimeter);
-  for(const auto& dir: dirs){
+  for (const auto &dir : dirs) {
     std::filesystem::path p = std::filesystem::path(dir) / cmd_name;
-    // skip if doesn't exist or isn't a regular file
-    if(!std::filesystem::exists(p) || !std::filesystem::is_regular_file(p)){
+    if (!std::filesystem::exists(p) || !std::filesystem::is_regular_file(p)) {
       continue;
     }
-    // checking execute permission
-    if(access(p.c_str(), X_OK) == 0){
+    if (access(p.c_str(), X_OK) == 0) {
       return p.string();
     }
   }
   return "";
 }
 
+void handle_echo(const std::string &input) {
+  std::string text = input.substr(4);
+  if (!text.empty() && text[0] == ' ')
+    text = text.substr(1);
+  std::cout << text << std::endl;
+}
+
+void handle_type(const std::string &input) {
+  std::string text = input.substr(4);
+  if (!text.empty() && text[0] == ' ') {
+    text = text.substr(1);
+  }
+  
+  if (text == "echo" || text == "exit" || text == "type") {
+    std::cout << text << " is a shell builtin" << std::endl;
+  } else {
+    std::string exec_path = find_executables_in_path(text);
+    if (!exec_path.empty()) {
+      std::cout << text << " is " << exec_path << std::endl;
+    } else {
+      std::cout << text << ": not found" << std::endl;
+    }
+  }
+}
+
+void handle_unknown_command(const std::string &input) {
+  std::cout << input << ": command not found" << std::endl;
+}
+
 int main() {
-  // Flush after every std::cout / std:cerr
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
 
@@ -55,28 +81,15 @@ int main() {
     std::cout << "$ ";
     std::string input;
     std::getline(std::cin, input);
-    if (input == "exit")
+    
+    if (input == "exit") {
       break;
-    else if (input.rfind("echo", 0) == 0) {
-      std::string text = input.substr(4);
-
-      if (!text.empty() && text[0] == ' ')
-        text = text.substr(1);
-      std::cout << text << std::endl;
+    } else if (input.rfind("echo", 0) == 0) {
+      handle_echo(input);
     } else if (input.rfind("type", 0) == 0) {
-      std::string text = input.substr(4);
-      if (!text.empty() && text[0] == ' ') {
-        text = text.substr(1);
-      }
-      if (text == "echo" || text == "exit" || text == "type") {
-        std::cout << text << " is a shell builtin" << std::endl;
-      } else if(!find_executables_in_path(text).empty()){
-        std::cout << text << " is " << find_executables_in_path(text) << std::endl;
-      }
-       else
-        std::cout << text << ": not found" << std::endl;
+      handle_type(input);
+    } else {
+      handle_unknown_command(input);
     }
-     else
-      std::cout << input << ": command not found" << std::endl;
   }
 }
