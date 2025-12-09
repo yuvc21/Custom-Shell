@@ -2,6 +2,8 @@
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -28,19 +30,10 @@ std::vector<std::string> split(const std::string &str, char delimeter) {
 
 std::vector<std::string> tokenize(const std::string &input) {
   std::vector<std::string> tokens;
-  std::string current;
-  for (char c : input) {
-    if (c == ' ' || c == '\t') {
-      if (!current.empty()) {
-        tokens.push_back(current);
-        current.clear();
-      }
-    }else{
-      current += c;
-    }
-  }
-  if(!current.empty()){
-    tokens.push_back(current);
+  std::istringstream iss(input);
+  std::string token;
+  while (iss >> token) {
+    tokens.push_back(token);
   }
   return tokens;
 }
@@ -57,6 +50,7 @@ std::string find_executables_in_path(const std::string &cmd_name) {
     if (!std::filesystem::exists(p) || !std::filesystem::is_regular_file(p)) {
       continue;
     }
+    // check if executing permssions are there
     if (access(p.c_str(), X_OK) == 0) {
       return p.string();
     }
@@ -77,7 +71,7 @@ void handle_type(const std::string &input) {
     text = text.substr(1);
   }
 
-  if (text == "echo" || text == "exit" || text == "type") {
+  if (text == "echo" || text == "exit" || text == "type" || text == "pwd") {
     std::cout << text << " is a shell builtin" << std::endl;
   } else {
     std::string exec_path = find_executables_in_path(text);
@@ -90,7 +84,8 @@ void handle_type(const std::string &input) {
 }
 extern char **environ;
 void executeExternal(const std::vector<std::string> &args) {
-  if(args.empty()) return;
+  if (args.empty())
+    return;
   std::string command_path = find_executables_in_path(args[0]);
   if (command_path.empty()) {
     std::cout << args[0] << ": command not found" << std::endl;
@@ -123,6 +118,24 @@ void executeExternal(const std::vector<std::string> &args) {
     waitpid(pid, &status, 0);
   }
 }
+void handle_exit(const std::string &input) {
+  auto tokens = tokenize(input);
+  int code = 0;
+  if (tokens.size() > 1) {
+    try {
+      code = std::stoi(tokens[1]);
+    } catch (const std::invalid_argument &) {
+      std::cerr << "exit: " << tokens[1] << ": numeric argument required"
+                << std::endl;
+      code = 2;
+    } catch (const std::out_of_range &) {
+      std::cerr << "exit: " << tokens[1] << ": numeric argument required"
+                << std::endl;
+      code = 2;
+    }
+  }
+  exit(code);
+}
 int main() {
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
@@ -132,15 +145,17 @@ int main() {
     std::string input;
     std::getline(std::cin, input);
 
-    if (input == "exit") {
-      break;
+    if (input.rfind("exit", 0) == 0) {
+      handle_exit(input);
     } else if (input.rfind("echo", 0) == 0) {
       handle_echo(input);
     } else if (input.rfind("type", 0) == 0) {
       handle_type(input);
-    }else {
-        auto args = tokenize(input);
-        executeExternal(args);
-      }
+    } else if (input.rfind("pwd", 0) == 0) {
+      std::cout << std::filesystem::current_path().string() << std::endl;
+    } else {
+      auto args = tokenize(input);
+      executeExternal(args);
+    }
   }
 }
