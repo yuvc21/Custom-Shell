@@ -138,8 +138,8 @@ void handle_exit(const std::string &input) {
   }
   exit(code);
 }
-stack<int> cd_directories;
 /*
+stack<int> cd_directories;
 void handle_cd(std::string &input) {
   vector<string> argv = tokenize(input);
   std::string current_directory = argv[1];
