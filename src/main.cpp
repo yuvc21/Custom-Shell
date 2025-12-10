@@ -3,12 +3,13 @@
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <stack>
 #include <stdexcept>
 #include <string>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
-
+std::string home_directory = std::getenv("HOME") ? std::getenv("HOME") : "";
 std::vector<std::string> split(const std::string &str, char delimeter) {
   std::vector<std::string> parts;
   std::string current;
@@ -71,7 +72,8 @@ void handle_type(const std::string &input) {
     text = text.substr(1);
   }
 
-  if (text == "echo" || text == "exit" || text == "type" || text == "pwd") {
+  if (text == "echo" || text == "exit" || text == "type" || text == "pwd" ||
+      text == "cd") {
     std::cout << text << " is a shell builtin" << std::endl;
   } else {
     std::string exec_path = find_executables_in_path(text);
@@ -136,6 +138,88 @@ void handle_exit(const std::string &input) {
   }
   exit(code);
 }
+stack<int> cd_directories;
+/*
+void handle_cd(std::string &input) {
+  vector<string> argv = tokenize(input);
+  std::string current_directory = argv[1];
+  if (argv.size() == 1) {
+    std::filesystem::current_path().string() = original_path;
+    while (!cd_directories.empty()) {
+      cd_directories.pop();
+    }
+  } else if (current_directory == "..") {
+    if (!st.empty()) {
+      cd_directories.pop();
+      std::filesystem::current_path().string() = cd_directories.top();
+    }
+  } else if (std::filesystem::exists(current_directory)) {
+    if (cd_directories.empty) {
+      cd_directories.push(original_path);
+    }
+    cd_directories.push(current_directory);
+    std::filesystem::current_path.string();
+  } else {
+    cout << "cd: " << current_directory << "; No such file or directory";
+  }
+}
+*/
+std::string previous_directory;
+
+void handle_cd(const std::string &input) {
+  auto tokens = tokenize(input);
+  std::string current = std::filesystem::current_path().string();
+
+  if (tokens.size() == 1) {
+    const char *home = std::getenv("HOME");
+    if (home) {
+      previous_directory = current;
+      try {
+        std::filesystem::current_path(home);
+      } catch (const std::filesystem::filesystem_error &) {
+        std::cerr << "cd: failed to change to HOME" << std::endl;
+      }
+    }
+  } else if (tokens[1] == "-") {
+    if (!previous_directory.empty()) {
+      std::string temp = current;
+      try {
+        std::filesystem::current_path(previous_directory);
+        std ::cout << previous_directory << std::endl;
+        previous_directory = temp;
+      } catch (const std::filesystem::filesystem_error &) {
+        std::cerr << "cd: failed to change directory" << std::endl;
+      }
+    } else {
+      std::cerr << "cd OLDPWD not set" << std::endl;
+    }
+  } else {
+    std::string target = tokens[1];
+    if (target == "~") {
+      const char *home = std::getenv("HOME");
+      if (home)
+        target = home;
+    }else if(target.rfind("~/", 0) == 0){
+      const char* home = std::getenv("HOME");
+      if(home) target = std::string(home) + target.substr(1);
+    }
+    std::filesystem::path target_path;
+    if(target[0] == '/'){
+      target_path = target;
+    }else{
+      target_path = std::filesystem::current_path() / target;
+      target_path = std::filesystem::absolute(target_path);
+    }
+    try{
+      previous_directory = current;
+      std::filesystem::current_path(target_path);
+    }catch(const std::filesystem::filesystem_error&){
+      std:: cout << "cd: " << target << ": No such file or directory" << std::endl;
+    }
+  }
+
+}
+
 int main() {
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
@@ -153,6 +237,8 @@ int main() {
       handle_type(input);
     } else if (input.rfind("pwd", 0) == 0) {
       std::cout << std::filesystem::current_path().string() << std::endl;
+    } else if (input.rfind("cd", 0) == 0) {
+      handle_cd(input);
     } else {
       auto args = tokenize(input);
       executeExternal(args);
