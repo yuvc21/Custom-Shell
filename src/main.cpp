@@ -81,17 +81,18 @@ std::string find_executables_in_path(const std::string &cmd_name) {
 }
 
 void handle_echo(const std::string &input) {
-  std::string text = input.substr(4);
-  if (!text.empty() && text[0] == ' ')
-    text = text.substr(1);
-  std::cout << text << std::endl;
+  auto tokens = tokenize(input);
+  for(size_t i = 1; i < tokens.size(); ++i){
+    if(i > 1) std::cout << ' ';
+    std::cout << tokens[i];
+  }
+  std::cout << std::endl;
 }
 
 void handle_type(const std::string &input) {
-  std::string text = input.substr(4);
-  if (!text.empty() && text[0] == ' ') {
-    text = text.substr(1);
-  }
+  auto tokens = tokenize(input);
+  if(tokens.size() < 2) return;
+  std::string text = tokens[1];
 
   if (text == "echo" || text == "exit" || text == "type" || text == "pwd" ||
       text == "cd") {
@@ -141,7 +142,6 @@ void executeExternal(const std::vector<std::string> &args) {
     waitpid(pid, &status, 0);
   }
 }
-bool quotes = false;
 void handle_exit(const std::string &input) {
   auto tokens = tokenize(input);
   int code = 0;
