@@ -34,7 +34,7 @@ std::vector<std::string> tokenize(const std::string &input) {
   std::string current_token;
   bool in_single_quotes = 0;
   bool in_double_quotes = 0;
-  for (int i = 0; i < input.size(); ++i) {
+  for (size_t i = 0; i < input.size(); ++i) {
     char c = input[i];
     if (c == '\'' && !in_double_quotes) {
       in_single_quotes = !in_single_quotes;
