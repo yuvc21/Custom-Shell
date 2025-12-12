@@ -32,27 +32,29 @@ std::vector<std::string> split(const std::string &str, char delimeter) {
 std::vector<std::string> tokenize(const std::string &input) {
   std::vector<std::string> tokens;
   std::string current_token;
-  bool in_single_quotes = 0;
-  bool in_double_quotes = 0;
+  bool in_single_quotes = false;
+  bool in_double_quotes = false;
   for (size_t i = 0; i < input.size(); ++i) {
     char c = input[i];
     if (c == '\'' && !in_double_quotes) {
       in_single_quotes = !in_single_quotes;
-    } else if (c == '"' && !in_single_quotes){
+      continue;
+    } else if (c == '"' && !in_single_quotes) {
       in_double_quotes = !in_double_quotes;
-    }else if(c == ' ' && !in_single_quotes && !in_double_quotes){
-      if(!current_token.empty()){
+      continue;
+    } else if (c == ' ' && !in_single_quotes && !in_double_quotes) {
+      if (!current_token.empty()) {
         tokens.push_back(current_token);
         current_token.clear();
       }
-    }else if(c == '\\' && !in_single_quotes && i + 1 < input.length()){
+    } else if (c == '\\' && !in_single_quotes && i + 1 < input.length()) {
       char next = input[++i];
       current_token += next;
-    }else{
+    } else {
       current_token += c;
     }
   }
-  if(!current_token.empty()){
+  if (!current_token.empty()) {
     tokens.push_back(current_token);
   }
   return tokens;
