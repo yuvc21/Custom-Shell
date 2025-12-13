@@ -171,7 +171,7 @@ extern char **environ;
 void executeExternal(const Command &cmd) {
   if (cmd.args.empty())
     return;
-  std::string command_path = find_executables_in_path(cmd.[0]);
+  std::string command_path = find_executables_in_path(cmd.args[0]);
   if (command_path.empty()) {
     std::cout << cmd.args[0] << ": command not found" << std::endl;
     return;
@@ -188,7 +188,7 @@ void executeExternal(const Command &cmd) {
     //  === CHILD PROCESS CODE ===
     if (cmd.has_output_redirect) {
       int fd =
-          open(cmd.output_file.c_str(), O_WRONGLY | O_CREAT | O_TRUNC, 0644);
+          open(cmd.output_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
       if (fd != -1) {
         dup2(fd, STDOUT_FILENO);
         close(fd);
