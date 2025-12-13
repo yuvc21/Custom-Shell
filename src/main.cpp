@@ -139,21 +139,34 @@ std::string find_executables_in_path(const std::string &cmd_name) {
   return "";
 }
 
-void handle_echo(const std::string &input) {
-  auto tokens = tokenize(input);
-  for (size_t i = 1; i < tokens.size(); ++i) {
+void handle_echo(const Command &cmd) {
+  int saved_fd = -1;
+  // handling redirection if present
+  if (cmd.has_output_redirect) {
+    saved_fd = dup(STDOUT_FILENO);
+    int fd = open(cmd.output_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd != -1) {
+      dup2(fd, STDOUT_FILENO);
+      close(fd);
+    }
+  }
+  for (size_t i = 1; i < cmd.args.size(); ++i) {
     if (i > 1)
       std::cout << ' ';
-    std::cout << tokens[i];
+    std::cout << cmd.args[i];
   }
   std::cout << std::endl;
+  //  restoring stdout if redirected
+  if (saved_fd != -1) {
+    dup2(saved_fd, STDOUT_FILENO);
+    close(saved_fd);
+  }
 }
 
-void handle_type(const std::string &input) {
-  auto tokens = tokenize(input);
-  if (tokens.size() < 2)
+void handle_type(const Command &cmd) {
+  if (cmd.args.size() < 2)
     return;
-  std::string text = tokens[1];
+  std::string text = cmd.args[1];
 
   if (text == "echo" || text == "exit" || text == "type" || text == "pwd" ||
       text == "cd") {
@@ -211,18 +224,17 @@ void executeExternal(const Command &cmd) {
     waitpid(pid, &status, 0);
   }
 }
-void handle_exit(const std::string &input) {
-  auto tokens = tokenize(input);
+void handle_exit(const Command &cmd) {
   int code = 0;
-  if (tokens.size() > 1) {
+  if (cmd.args.size() > 1) {
     try {
-      code = std::stoi(tokens[1]);
+      code = std::stoi(cmd.args[1]);
     } catch (const std::invalid_argument &) {
-      std::cerr << "exit: " << tokens[1] << ": numeric argument required"
+      std::cerr << "exit: " << cmd.args[1] << ": numeric argument required"
                 << std::endl;
       code = 2;
     } catch (const std::out_of_range &) {
-      std::cerr << "exit: " << tokens[1] << ": numeric argument required"
+      std::cerr << "exit: " << cmd.args[1] << ": numeric argument required"
                 << std::endl;
       code = 2;
     }
@@ -257,11 +269,10 @@ void handle_cd(std::string &input) {
 */
 std::string previous_directory;
 
-void handle_cd(const std::string &input) {
-  auto tokens = tokenize(input);
+void handle_cd(const Command &cmd) {
   std::string current = std::filesystem::current_path().string();
 
-  if (tokens.size() == 1) {
+  if (cmd.args.size() == 1) {
     const char *home = std::getenv("HOME");
     if (home) {
       previous_directory = current;
@@ -271,7 +282,7 @@ void handle_cd(const std::string &input) {
         std::cerr << "cd: failed to change to HOME" << std::endl;
       }
     }
-  } else if (tokens[1] == "-") {
+  } else if (cmd.args[1] == "-") {
     if (!previous_directory.empty()) {
       std::string temp = current;
       try {
@@ -285,7 +296,7 @@ void handle_cd(const std::string &input) {
       std::cerr << "cd OLDPWD not set" << std::endl;
     }
   } else {
-    std::string target = tokens[1];
+    std::string target = cmd.args[1];
     if (target == "~") {
       const char *home = std::getenv("HOME");
       if (home)
@@ -333,15 +344,15 @@ int main() {
       continue;
 
     if (cmd.args[0] == "exit") {
-      handle_exit(input);
+      handle_exit(cmd);
     } else if (cmd.args[0] == "echo") {
-      handle_echo(input);
+      handle_echo(cmd);
     } else if (cmd.args[0] == "type") {
-      handle_type(input);
+      handle_type(cmd);
     } else if (cmd.args[0] == "pwd") {
       std::cout << std::filesystem::current_path().string() << std::endl;
     } else if (cmd.args[0] == "cd") {
-      handle_cd(input);
+      handle_cd(cmd);
     } else {
       executeExternal(cmd);
     }
