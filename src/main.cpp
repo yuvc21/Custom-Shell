@@ -47,9 +47,21 @@ std::vector<std::string> tokenize(const std::string &input) {
         tokens.push_back(current_token);
         current_token.clear();
       }
-    } else if (c == '\\' && !in_single_quotes && i + 1 < input.length()) {
-      char next = input[++i];
-      current_token += next;
+    } else if (c == '\\' && i + 1 < input.length()) {
+      char next = input[i + 1];
+      if (in_single_quotes) {
+        current_token += c;
+      } else if (in_double_quotes) {
+        if (next == '"' || next == '\\' next == '$' || next == '`') {
+          current_token += next;
+          ++i;
+        } else {
+          current_token += c;
+        }
+      } else {
+        current_token += next;
+        ++i;
+      }
     } else {
       current_token += c;
     }
@@ -82,8 +94,9 @@ std::string find_executables_in_path(const std::string &cmd_name) {
 
 void handle_echo(const std::string &input) {
   auto tokens = tokenize(input);
-  for(size_t i = 1; i < tokens.size(); ++i){
-    if(i > 1) std::cout << ' ';
+  for (size_t i = 0; i < tokens.size(); ++i) {
+    if (i > 1)
+      std::cout << ' ';
     std::cout << tokens[i];
   }
   std::cout << std::endl;
@@ -91,7 +104,8 @@ void handle_echo(const std::string &input) {
 
 void handle_type(const std::string &input) {
   auto tokens = tokenize(input);
-  if(tokens.size() < 2) return;
+  if (tokens.size() < 2)
+    return;
   std::string text = tokens[1];
 
   if (text == "echo" || text == "exit" || text == "type" || text == "pwd" ||
@@ -142,6 +156,7 @@ void executeExternal(const std::vector<std::string> &args) {
     waitpid(pid, &status, 0);
   }
 }
+bool quotes = false;
 void handle_exit(const std::string &input) {
   auto tokens = tokenize(input);
   int code = 0;
