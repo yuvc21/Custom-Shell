@@ -157,7 +157,7 @@ void handle_echo(const Command &cmd) {
     saved_stderr = dup(STDERR_FILENO);
     int fd = open(cmd.error_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if(fd != -1){
-      dup2(fd , STDRERR_FILENO);
+      dup2(fd , STDERR_FILENO);
       close(fd);
     }
   }
