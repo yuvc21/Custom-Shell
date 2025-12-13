@@ -10,6 +10,8 @@ struct Command {
   std::string error_file;
   bool has_output_redirect = false;
   bool has_error_redirect = false;
+  bool append_output = false;
+  bool append_error = false;
 };
 
 Command parseCommand(const std::vector<std::string>& tokens);

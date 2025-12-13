@@ -23,18 +23,30 @@ void executeExternal(const Command& cmd) {
   }
   
   if (pid == 0) {
-    // Handle stdout redirection
+    // handle stdout redirection
     if (cmd.has_output_redirect) {
-      int fd = open(cmd.output_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        int flags = O_WRONLY | O_CREAT;
+        if(cmd.append_output){
+            flags |= O_APPEND;
+        }else{
+            flags |= O_TRUNC;
+        }
+      int fd = open(cmd.output_file.c_str(), flags, 0644);
       if (fd != -1) {
         dup2(fd, STDOUT_FILENO);
         close(fd);
       }
     }
     
-    // Handle stderr redirection
+    // handle stderr redirection
     if (cmd.has_error_redirect) {
-      int fd = open(cmd.error_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        int flags = O_WRONLY | O_CREAT;
+        if(cmd.append_error){
+            flags |= O_APPEND;
+        }else{
+            flags |= O_TRUNC;
+        }
+      int fd = open(cmd.error_file.c_str(), flags, 0644);
       if (fd != -1) {
         dup2(fd, STDERR_FILENO);
         close(fd);

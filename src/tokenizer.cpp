@@ -34,6 +34,33 @@ std::vector<std::string> tokenize(const std::string &input) {
         current_token += next;
         ++i;
       }
+    } else if (c == '>' && i + 1 < input.size() && input[i + 1] == '>') {
+      if (!current_token.empty()) {
+        char last = current_token.back();
+        if (last == '1' || last == '2') {
+          current_token.pop_back();
+          if (!current_token.empty()) {
+            tokens.push_back(current_token);
+          }
+          current_token.clear();
+          tokens.push_back(std::string(1, last) + ">>");
+          ++i; // skipping the second '>'
+        } else {
+          tokens.push_back(current_token);
+          current_token.clear();
+          tokens.push_back(">>");
+          ++i; // skipping the second '>'
+        }
+      } else {
+        if (!tokens.empty() && (tokens.back() == "1" || tokens.back() == "2")) {
+          std::string digit = tokens.back();
+          tokens.pop_back();
+          tokens.push_back(digit + ">>");
+        } else {
+          tokens.push_back(">>");
+        }
+        ++i; // skipping the second '>'
+      }
     } else if (c == '>') {
       if (!current_token.empty()) {
         char last = current_token.back();
