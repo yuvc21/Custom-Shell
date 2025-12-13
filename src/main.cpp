@@ -29,7 +29,14 @@ Command parseCommand(const std::vector<std::string> &tokens) {
         cmd.has_output_redirect = true;
         ++i; // for skipping filename token..
       }
-    } else {
+    }else if(tokens[i] == "2>"){
+      if(i + 1 < tokens.size()){
+        cmd.error_file = tokens[i + 1];
+        cmd.has_error_redirect = true;
+        ++i; // for skipping the filename token..
+      }
+    }
+     else {
       cmd.args.push_back(tokens[i]);
     }
   }
@@ -90,26 +97,31 @@ std::vector<std::string> tokenize(const std::string &input) {
         ++i;
       }
     } else if (c == '>') {
-      if (!current_token.empty() && current_token.back() == '1') {
-        current_token.pop_back();
-        if (!current_token.empty()) {
+      if (!current_token.empty()) {
+        char last = current_token.back();
+        if (last == '1' || last == '2') {
+          current_token.pop_back();
+
+          if (!current_token.empty()) {
+            tokens.push_back(current_token);
+          }
+          current_token.clear();
+          tokens.push_back(std::string(1, last) + ">");
+        } else {
           tokens.push_back(current_token);
           current_token.clear();
+          tokens.push_back(">");
         }
-        tokens.push_back("1>");
-      } else if (!current_token.empty() && current_token.back() == '2') {
-        current_token.pop_back();
-        if (!current_token.empty()) {
-          tokens.push_back(current_token);
-          current_token.clear();
+      }
+      // current_token is empty that means case might be 1 > or 2 > like this
+      else {
+        if (!tokens.empty() && (tokens.back() == "1" || tokens.back() == "2")) {
+          std::string digit = tokens.back();
+          tokens.pop_back();
+          tokens.push_back(digit + ">");
+        } else {
+          tokens.push_back(">");
         }
-        tokens.push_back("2>");
-      } else {
-        if (!current_token.empty()) {
-          tokens.push_back(current_token);
-          current_token.clear();
-        }
-        tokens.push_back(">");
       }
     } else {
       current_token += c;
@@ -154,11 +166,11 @@ void handle_echo(const Command &cmd) {
     }
   }
   // handling error redirection if present
-  if(cmd.has_error_redirect){
+  if (cmd.has_error_redirect) {
     saved_stderr = dup(STDERR_FILENO);
     int fd = open(cmd.error_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if(fd != -1){
-      dup2(fd , STDERR_FILENO);
+    if (fd != -1) {
+      dup2(fd, STDERR_FILENO);
       close(fd);
     }
   }
@@ -174,8 +186,8 @@ void handle_echo(const Command &cmd) {
     close(saved_fd);
   }
   // restoring stderr if redirected
-  if(saved_stderr != -1){
-    dup2(saved_stderr , STDERR_FILENO);
+  if (saved_stderr != -1) {
+    dup2(saved_stderr, STDERR_FILENO);
     close(saved_stderr);
   }
 }
@@ -217,7 +229,7 @@ void executeExternal(const Command &cmd) {
   if (pid == 0) {
     //  === CHILD PROCESS CODE ===
 
-    //handling stdout redirection (NEW)
+    // handling stdout redirection (NEW)
     if (cmd.has_output_redirect) {
       int fd =
           open(cmd.output_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -226,12 +238,12 @@ void executeExternal(const Command &cmd) {
         close(fd);
       }
     }
-    
+
     // handling stderr redirection
-    if(cmd.has_error_redirect){
+    if (cmd.has_error_redirect) {
       int fd = open(cmd.error_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-      if(fd != -1){
-        dup2(fd , STDERR_FILENO);
+      if (fd != -1) {
+        dup2(fd, STDERR_FILENO);
         close(fd);
       }
     }
