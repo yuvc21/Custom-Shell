@@ -143,6 +143,7 @@ std::string find_executables_in_path(const std::string &cmd_name) {
 
 void handle_echo(const Command &cmd) {
   int saved_fd = -1;
+  int saved_stderr = -1;
   // handling redirection if present
   if (cmd.has_output_redirect) {
     saved_fd = dup(STDOUT_FILENO);
