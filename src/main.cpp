@@ -15,6 +15,8 @@
 struct Command {
   std::vector<std::string> args;    // command and it'a arguments
   std::string output_file;          // file for stdout redirection
+  std::string error_file;           // file for stdout redirection(2>)
+  bool has_error_redirect = false;  // flag for 2>
   bool has_output_redirect = false; // flag for > ot 1>
 };
 
@@ -150,6 +152,15 @@ void handle_echo(const Command &cmd) {
       close(fd);
     }
   }
+  // handling error redirection if present
+  if(cmd.has_error_redirect){
+    saved_stderr = dup(STDERR_FILENO);
+    int fd = open(cmd.error_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if(fd != -1){
+      dup2(fd , STDRERR_FILENO);
+      close(fd);
+    }
+  }
   for (size_t i = 1; i < cmd.args.size(); ++i) {
     if (i > 1)
       std::cout << ' ';
@@ -160,6 +171,11 @@ void handle_echo(const Command &cmd) {
   if (saved_fd != -1) {
     dup2(saved_fd, STDOUT_FILENO);
     close(saved_fd);
+  }
+  // restoring stderr if redirected
+  if(saved_stderr != -1){
+    dup2(saved_stderr , STDERR_FILENO);
+    close(saved_stderr);
   }
 }
 
@@ -199,6 +215,8 @@ void executeExternal(const Command &cmd) {
   }
   if (pid == 0) {
     //  === CHILD PROCESS CODE ===
+
+    //handling stdout redirection (NEW)
     if (cmd.has_output_redirect) {
       int fd =
           open(cmd.output_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -207,6 +225,16 @@ void executeExternal(const Command &cmd) {
         close(fd);
       }
     }
+    
+    // handling stderr redirection
+    if(cmd.has_error_redirect){
+      int fd = open(cmd.error_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      if(fd != -1){
+        dup2(fd , STDERR_FILENO);
+        close(fd);
+      }
+    }
+    // execuitng command
     std::vector<char *> argv;
     for (const auto &arg : cmd.args) {
       argv.push_back(const_cast<char *>(arg.c_str()));
