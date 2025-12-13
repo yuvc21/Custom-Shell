@@ -52,7 +52,7 @@ std::vector<std::string> tokenize(const std::string &input) {
       if (in_single_quotes) {
         current_token += c;
       } else if (in_double_quotes) {
-        if (next == '"' || next == '\\' next == '$' || next == '`') {
+        if (next == '"' || next == '\\' || next == '$' || next == '`') {
           current_token += next;
           ++i;
         } else {
