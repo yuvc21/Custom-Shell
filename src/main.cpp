@@ -1,6 +1,8 @@
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stack>
@@ -9,6 +11,28 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+
+struct Command {
+  std::vector<std::string> args;    // command and it'a arguments
+  std::string output_file;          // file for stdout redirection
+  bool has_output_redirect = false; // flag for > ot 1>
+};
+
+Command parseCommand(const std::vector<std::string> &tokens) {
+  Command cmd;
+  for (size_t i = 0; i < tokens.size(); ++i) {
+    if (tokens[i] == ">" || tokens[i] == "1>") {
+      if (i + 1 < tokens.size()) {
+        cmd.output_file = tokens[i + 1];
+        cmd.has_output_redirect = true;
+        ++i; // for skipping filename token..
+      }
+    } else {
+      cmd.args.push_back(tokens[i]);
+    }
+  }
+  return cmd;
+}
 std::string home_directory = std::getenv("HOME") ? std::getenv("HOME") : "";
 std::vector<std::string> split(const std::string &str, char delimeter) {
   std::vector<std::string> parts;
@@ -47,6 +71,7 @@ std::vector<std::string> tokenize(const std::string &input) {
         tokens.push_back(current_token);
         current_token.clear();
       }
+      // handling the backslash with ans without quotes
     } else if (c == '\\' && i + 1 < input.length()) {
       char next = input[i + 1];
       if (in_single_quotes) {
@@ -61,6 +86,28 @@ std::vector<std::string> tokenize(const std::string &input) {
       } else {
         current_token += next;
         ++i;
+      }
+    } else if (c == '>') {
+      if (!current_token.empty() && current_token.back() == '1') {
+        current_token.pop_back();
+        if (!current_token.empty()) {
+          tokens.push_back(current_token);
+          current_token.clear();
+        }
+        tokens.push_back("1>");
+      } else if (!current_token.empty() && current_token.back() == '2') {
+        current_token.pop_back();
+        if (!current_token.empty()) {
+          tokens.push_back(current_token);
+          current_token.clear();
+        }
+        tokens.push_back("2>");
+      } else {
+        if (!current_token.empty()) {
+          tokens.push_back(current_token);
+          current_token.clear();
+        }
+        tokens.push_back(">");
       }
     } else {
       current_token += c;
@@ -121,12 +168,12 @@ void handle_type(const std::string &input) {
   }
 }
 extern char **environ;
-void executeExternal(const std::vector<std::string> &args) {
-  if (args.empty())
+void executeExternal(const Command &cmd) {
+  if (cmd.args.empty())
     return;
-  std::string command_path = find_executables_in_path(args[0]);
+  std::string command_path = find_executables_in_path(cmd.[0]);
   if (command_path.empty()) {
-    std::cout << args[0] << ": command not found" << std::endl;
+    std::cout << cmd.args[0] << ": command not found" << std::endl;
     return;
   }
   // fork() creates a child process
@@ -139,8 +186,16 @@ void executeExternal(const std::vector<std::string> &args) {
   }
   if (pid == 0) {
     //  === CHILD PROCESS CODE ===
+    if (cmd.has_output_redirect) {
+      int fd =
+          open(cmd.output_file.c_str(), O_WRONGLY | O_CREAT | O_TRUNC, 0644);
+      if (fd != -1) {
+        dup2(fd, STDOUT_FILENO);
+        close(fd);
+      }
+    }
     std::vector<char *> argv;
-    for (const auto &arg : args) {
+    for (const auto &arg : cmd.args) {
       argv.push_back(const_cast<char *>(arg.c_str()));
     }
     // this is a null-terminated array
@@ -148,7 +203,7 @@ void executeExternal(const std::vector<std::string> &args) {
     argv.push_back(nullptr);
     execve(command_path.c_str(), argv.data(), environ);
 
-    std::cerr << "Failed to execute " << args[0] << std::endl;
+    std::cerr << "Failed to execute " << cmd.args[0] << std::endl;
     exit(1);
   } else {
     // === PARENT PROCESS CODE ===
@@ -266,19 +321,29 @@ int main() {
     std::string input;
     std::getline(std::cin, input);
 
-    if (input.rfind("exit", 0) == 0) {
+    if (input.empty()) {
+      continue;
+    }
+    auto tokens = tokenize(input);
+    if (tokens.empty())
+      continue;
+
+    Command cmd = parseCommand(tokens);
+    if (cmd.args.empty())
+      continue;
+
+    if (cmd.args[0] == "exit") {
       handle_exit(input);
-    } else if (input.rfind("echo", 0) == 0) {
+    } else if (cmd.args[0] == "echo") {
       handle_echo(input);
-    } else if (input.rfind("type", 0) == 0) {
+    } else if (cmd.args[0] == "type") {
       handle_type(input);
-    } else if (input.rfind("pwd", 0) == 0) {
+    } else if (cmd.args[0] == "pwd") {
       std::cout << std::filesystem::current_path().string() << std::endl;
-    } else if (input.rfind("cd", 0) == 0) {
+    } else if (cmd.args[0] == "cd") {
       handle_cd(input);
     } else {
-      auto args = tokenize(input);
-      executeExternal(args);
+      executeExternal(cmd);
     }
   }
 }
