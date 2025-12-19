@@ -8,6 +8,6 @@ void handle_echo(const Command& cmd);
 void handle_type(const Command& cmd);
 void handle_pwd(const Command& cmd);
 void handle_cd(const Command& cmd);
-void handle_exit(const Command& cmd);
+void handle_exit(const Command& cmd);z
 
 #endif
