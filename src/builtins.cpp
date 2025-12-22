@@ -5,13 +5,92 @@
 #include <iostream>
 #include <unistd.h>
 
+std::string previous_directory;
+AutocompleteTrie::AutocompleteTrie() { root = new TrieNode(); }
+
+AutocompleteTrie::~AutocompleteTrie() { deleteNode(root); }
+
+// helper for recursively deleting all the nodes (post order traversal);
+void AutocompleteTrie::deleteNode(TrieNode *node) {
+  if (!node)
+    return;
+
+  // first deleting all the children
+  for (auto &pair : node->children) {
+    deleteNode(pair.second);
+  }
+
+  delete node;
+}
+
+// inserting into the TRIE
+void AutocompleteTrie::insert(const std::string &word) {
+  TrieNode *current = root;
+
+  for (char ch : word) {
+    if (current->children.find(ch) == current->children.end()) {
+      current->children[ch] = new TrieNode();
+    }
+
+    current = current->children[ch];
+  }
+  current->isEndOfWord = true;
+  current->fullWord = word;
+}
+
+// resursively collect all words starting from a given node
+void AutocompleteTrie::collectWords(TrieNode *node,
+                                    std::vector<std::string> &results) {
+  if (!node)
+    return;
+
+  if (node->isEndOfWord == true) {
+    results.push_back(node->fullWord);
+  }
+  for (auto &pair : node->children) {
+    collectWords(pair.second, results);
+  }
+}
+
+// find all words that start with the given prefix;
+std::vector<std::string>
+AutocompleteTrie::findMatches(const std::string &prefix) {
+  std::vector<std::string> matches;
+  TrieNode *current = root;
+
+  // navigating to the node representing the prefix;
+  for (char ch : prefix) {
+    // if not found then returning the empty matches vector
+    if (current->children.find(ch) == current->children.end()) {
+      return matches;
+    }
+    current = current->children[ch];
+  }
+  // collecting all the words from this point onwards
+  collectWords(current, matches);
+  return matches;
+}
+
+std::string AutocompleteTrie::autocomplete(const std::string &prefix) {
+  if (prefix.empty())
+    return "";
+
+  std::vector<std::string> matches = findMatches(prefix);
+
+  // autocompleting if and only if there is one SINGLE match;
+  if (matches.size() == 1) {
+    return matches[0];
+  }
+  return "";
+}
+
 void handle_echo(const Command &cmd) {
   int saved_stdout = -1;
   int saved_stderr = -1;
 
   if (cmd.has_output_redirect) {
     int flags = O_WRONLY | O_CREAT;
-    flags |= cmd.append_output ? O_APPEND : O_TRUNC;
+    flags != cmd.append_output ? O_APPEND : O_TRUNC;
     saved_stdout = dup(STDOUT_FILENO);
     int fd = open(cmd.output_file.c_str(), flags, 0644);
     if (fd != -1) {
