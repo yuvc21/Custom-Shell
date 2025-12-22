@@ -5,7 +5,6 @@
 #include <iostream>
 #include <unistd.h>
 
-std::string previous_directory;
 AutocompleteTrie::AutocompleteTrie() { root = new TrieNode(); }
 
 AutocompleteTrie::~AutocompleteTrie() { deleteNode(root); }
