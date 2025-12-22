@@ -30,7 +30,7 @@ public:
   AutocompleteTrie();
   ~AutocompleteTrie();
 
-  void insert(const std::string word);
+  void insert(const std::string& word);
   std::vector<std::string> findMatches(const std::string &prefix);
 
   std::string autocomplete(const std::string &prefix);
