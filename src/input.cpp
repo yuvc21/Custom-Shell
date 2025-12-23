@@ -61,7 +61,7 @@ std::string read_command_line() {
         }
         
         // Print completed word
-        std::cout << completed << std::flush;
+        std::cout << completed << " " << std::flush;
       }
     } else if (c == '\n' || c == '\r') {  // Enter
       std::cout << '\n' << std::flush;
