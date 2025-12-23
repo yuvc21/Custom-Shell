@@ -89,7 +89,7 @@ void handle_echo(const Command &cmd) {
 
   if (cmd.has_output_redirect) {
     int flags = O_WRONLY | O_CREAT;
-    flags != cmd.append_output ? O_APPEND : O_TRUNC;
+    flags |= cmd.append_output ? O_APPEND : O_TRUNC;
     saved_stdout = dup(STDOUT_FILENO);
     int fd = open(cmd.output_file.c_str(), flags, 0644);
     if (fd != -1) {
@@ -100,7 +100,7 @@ void handle_echo(const Command &cmd) {
 
   if (cmd.has_error_redirect) {
     int flags = O_WRONLY | O_CREAT;
-    flags != cmd.append_error ? O_APPEND : O_TRUNC;
+    flags |= cmd.append_error ? O_APPEND : O_TRUNC;
     saved_stderr = dup(STDERR_FILENO);
     int fd = open(cmd.error_file.c_str(), flags, 0644);
     if (fd != -1) {
