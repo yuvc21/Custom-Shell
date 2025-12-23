@@ -55,7 +55,7 @@ std::string read_command_line() {
         
         // Update input
         if (space_pos == std::string::npos) {
-          input = completed;
+          input = completed + " ";
         } else {
           input = completed + input.substr(space_pos);
         }
