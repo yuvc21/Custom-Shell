@@ -43,6 +43,9 @@ std::string read_command_line() {
       } else {
         input = completed + input.substr(space_pos);
       }
+      
+      // CRITICAL: Print the completed line so tester can see it
+      std::cout << "\r$ " << input << " " << std::flush;
     }
   }
 
