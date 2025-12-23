@@ -55,13 +55,15 @@ std::string read_command_line() {
         
         // Update input
         if (space_pos == std::string::npos) {
-          input = completed + " ";
+          input = completed + " zz";
         } else {
           input = completed + input.substr(space_pos);
         }
         
         // Print completed word
         std::cout << completed << " " << std::flush;
+      }else {
+        std::cout << "\x07" << std::flush;
       }
     } else if (c == '\n' || c == '\r') {  // Enter
       std::cout << '\n' << std::flush;
