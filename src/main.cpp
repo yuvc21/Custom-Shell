@@ -2,17 +2,18 @@
 #include <string>
 #include "tokenizer.h"
 #include "parser.h"
+#include "input.h"
 #include "builtins.h"
 #include "executor.h"
 
 int main() {
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
+  
 
   while (true) {
     std::cout << "$ ";
-    std::string input;
-    std::getline(std::cin, input);
+    std::string input = read_command_line();
 
     if (input.empty()) continue;
 
