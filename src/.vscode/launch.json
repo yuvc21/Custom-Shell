@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/yuvaraj/codecrafters-shell-cpp/src",
-      "program": "/home/yuvaraj/codecrafters-shell-cpp/src/build/Debug/outDebug",
+      "cwd": "/home/yuvaraj/codecrafters-git-cpp/src",
+      "program": "/home/yuvaraj/codecrafters-git-cpp/src/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
