@@ -198,9 +198,11 @@ User Input (raw terminal)
 ```
 
 ### Trie Autocomplete Design
-
+- **Time Complexity**: O(L) lookup and insertion where L is the length of the word/prefix
+- **Space Complexity**: O(N*L) where N is number of words and L is average word length
 ```cpp
 class AutocompleteTrie {
+public:
   void insert(const std::string& word);
   std::vector<std::string> findMatches(const std::string& prefix);
   std::string autocomplete(const std::string& prefix); // returns single match
