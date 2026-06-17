@@ -47,10 +47,11 @@ std::string read_command_line() {
       }
       
       std::string completed = trie.autocomplete(first_word);
+      // std::cerr << "[TAB] input='" << input << "' first_word='" << first_word << "' completed='" << completed << "'\n";
       if (!completed.empty()) {
         // Erase old first word
         for (size_t i = 0; i < first_word.length(); i++) {
-          std::cout << "\b \b" << std::flush;
+          std::cout << "\b" << std::flush;
         }
         
         // Update input
