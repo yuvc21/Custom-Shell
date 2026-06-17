@@ -9,7 +9,6 @@
 
 A UNIX shell built from scratch in C++ as part of the [CodeCrafters](https://codecrafters.io) challenge.
 
-[Features](#features) • [Installation](#installation) • [Usage](#usage) • [Architecture](#architecture) • [Roadmap](#roadmap)
 
 </div>
 
