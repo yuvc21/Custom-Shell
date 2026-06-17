@@ -30,7 +30,7 @@ A UNIX shell built from scratch in C++ as part of the [CodeCrafters](https://cod
 
 ---
 
-## 🎯 Overview
+## Overview
 
 A lightweight UNIX shell implementation written in modern C++. This project demonstrates low-level terminal programming, command parsing, process management, and system design principles.
 
@@ -46,7 +46,7 @@ Built as part of the CodeCrafters "Build Your Own Shell" challenge, this shell h
 
 ---
 
-## ✨ Features
+## Features
 
 ### Currently Implemented ✅
 
@@ -61,7 +61,7 @@ Built as part of the CodeCrafters "Build Your Own Shell" challenge, this shell h
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
@@ -74,7 +74,7 @@ Built as part of the CodeCrafters "Build Your Own Shell" challenge, this shell h
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -176,7 +176,7 @@ $ gi[TAB]  → git
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### REPL Flow
 
@@ -209,7 +209,7 @@ class AutocompleteTrie {
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### Phase 1: Core Shell ✅
 - [x] REPL loop
@@ -235,7 +235,7 @@ class AutocompleteTrie {
 
 ---
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License.
 
